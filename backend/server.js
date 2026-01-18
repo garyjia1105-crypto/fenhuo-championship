@@ -14,9 +14,6 @@ const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 app.use(cors({
   origin: function (origin, callback) {
-    // #region agent log
-    console.log('[DEBUG] CORS: Request from origin:', origin);
-    // #endregion
     // 允许的来源列表
     const allowedOrigins = [
       frontendUrl,
@@ -26,18 +23,11 @@ app.use(cors({
     
     // 如果没有 origin（例如 Postman 或服务器请求），允许
     if (!origin) {
-      // #region agent log
-      console.log('[DEBUG] CORS: No origin, allowing');
-      // #endregion
       return callback(null, true);
     }
     
     // 检查是否匹配允许的来源
     const isAllowed = allowedOrigins.includes(origin);
-    
-    // #region agent log
-    console.log('[DEBUG] CORS: Is allowed:', isAllowed, 'Frontend URL:', frontendUrl);
-    // #endregion
     
     if (isAllowed || process.env.NODE_ENV !== 'production') {
       callback(null, true);

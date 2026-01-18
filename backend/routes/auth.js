@@ -25,10 +25,6 @@ router.post('/login', (req, res) => {
     // 存储 token
     tokenStore.set(token, { username, expiresAt });
     
-    // #region agent log
-    console.log('[DEBUG] Auth: Login successful, token generated:', token.substring(0, 10) + '...');
-    // #endregion
-    
     // 清理过期的 token（简单清理，生产环境应该使用定时任务）
     for (const [t, data] of tokenStore.entries()) {
       if (data.expiresAt < Date.now()) {
@@ -57,9 +53,6 @@ router.post('/logout', (req, res) => {
   
   if (token) {
     tokenStore.delete(token);
-    // #region agent log
-    console.log('[DEBUG] Auth: Token deleted, logout successful');
-    // #endregion
   }
   
   res.json({ 
@@ -74,16 +67,9 @@ router.get('/check', (req, res) => {
   const authHeader = req.headers.authorization;
   const token = authHeader ? authHeader.replace('Bearer ', '') : req.query.token;
   
-  // #region agent log
-  console.log('[DEBUG] Auth: Check request, token:', token ? token.substring(0, 10) + '...' : 'none');
-  // #endregion
-  
   if (token) {
     const tokenData = tokenStore.get(token);
     if (tokenData && tokenData.expiresAt > Date.now()) {
-      // #region agent log
-      console.log('[DEBUG] Auth: Token valid, authenticated');
-      // #endregion
       res.json({ 
         authenticated: true, 
         username: tokenData.username 
@@ -95,9 +81,6 @@ router.get('/check', (req, res) => {
     }
   }
   
-  // #region agent log
-  console.log('[DEBUG] Auth: Token invalid or missing, not authenticated');
-  // #endregion
   res.json({ authenticated: false });
 });
 

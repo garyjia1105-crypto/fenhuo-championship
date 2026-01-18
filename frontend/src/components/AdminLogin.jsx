@@ -11,83 +11,37 @@ const AdminLogin = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // #region agent log
-    console.log('[DEBUG] AdminLogin: Component mounted, checking auth');
-    // #endregion
     // 检查是否已登录
     apiClient.get('/auth/check')
       .then(response => {
-        // #region agent log
-        console.log('[DEBUG] AdminLogin: Auth check response', response.data);
-        // #endregion
         if (response.data.authenticated) {
-          // #region agent log
-          console.log('[DEBUG] AdminLogin: Already authenticated, navigating to /admin');
-          // #endregion
           navigate('/admin');
-        } else {
-          // #region agent log
-          console.log('[DEBUG] AdminLogin: Not authenticated, showing login form');
-          // #endregion
         }
       })
-      .catch((err) => {
-        // #region agent log
-        console.error('[DEBUG] AdminLogin: Auth check failed', {
-          message: err.message,
-          response: err.response,
-          code: err.code
-        });
-        // #endregion
+      .catch(() => {
         // 未登录，继续显示登录页面
       });
   }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // #region agent log
-    console.log('[DEBUG] AdminLogin: Form submitted', { username, passwordLength: password.length });
-    // #endregion
     setError('');
     setLoading(true);
 
     try {
-      // #region agent log
-      console.log('[DEBUG] AdminLogin: Sending login request');
-      // #endregion
       const response = await apiClient.post('/auth/login', {
         username,
         password,
       });
 
-      // #region agent log
-      console.log('[DEBUG] AdminLogin: Login response', response.data);
-      console.log('[DEBUG] AdminLogin: Response headers:', response.headers);
-      console.log('[DEBUG] AdminLogin: Set-Cookie header:', response.headers['set-cookie']);
-      // #endregion
-
       if (response.data.success && response.data.token) {
         // 保存 token 到 localStorage
         localStorage.setItem('authToken', response.data.token);
-        // #region agent log
-        console.log('[DEBUG] AdminLogin: Login successful, token saved to localStorage');
-        // #endregion
         navigate('/admin');
       } else {
-        // #region agent log
-        console.log('[DEBUG] AdminLogin: Login failed, response.data.success is false');
-        // #endregion
         setError(response.data.message || '登录失败');
       }
     } catch (err) {
-      // #region agent log
-      console.error('[DEBUG] AdminLogin: Login error', {
-        message: err.message,
-        response: err.response,
-        status: err.response?.status,
-        data: err.response?.data
-      });
-      // #endregion
       setError(err.response?.data?.message || '登录失败，请检查用户名和密码');
     } finally {
       setLoading(false);
@@ -98,14 +52,7 @@ const AdminLogin = () => {
     <div className="admin-login-container">
       <div className="admin-login-card">
         <h1>主办方登录</h1>
-        <form 
-          onSubmit={(e) => {
-            // #region agent log
-            console.log('[DEBUG] AdminLogin: Form onSubmit triggered');
-            // #endregion
-            handleSubmit(e);
-          }}
-        >
+        <form onSubmit={handleSubmit}>
           {error && <div className="error-message">{error}</div>}
           <div className="form-group">
             <label htmlFor="username">用户名</label>
@@ -133,11 +80,6 @@ const AdminLogin = () => {
             type="submit" 
             disabled={loading} 
             className="login-button"
-            onClick={(e) => {
-              // #region agent log
-              console.log('[DEBUG] AdminLogin: Button clicked', { loading, username, hasPassword: !!password });
-              // #endregion
-            }}
           >
             {loading ? '登录中...' : '登录'}
           </button>

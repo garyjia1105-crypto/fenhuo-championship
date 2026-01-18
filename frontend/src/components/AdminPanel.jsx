@@ -14,9 +14,9 @@ const AdminPanel = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    extractionValue: 0,
-    redValue: 0,
-    kills: 0,
+    extractionValue: '',
+    redValue: '',
+    kills: '',
   });
 
   // 编辑状态
@@ -40,45 +40,19 @@ const AdminPanel = () => {
 
   const checkAuth = useCallback(async () => {
     try {
-      // #region agent log
-      console.log('[DEBUG] AdminPanel: Checking auth, cookies:', document.cookie);
-      console.log('[DEBUG] AdminPanel: About to send /auth/check request');
-      // #endregion
       const response = await apiClient.get('/auth/check');
-      // #region agent log
-      console.log('[DEBUG] AdminPanel: Auth check response received', response.data);
-      console.log('[DEBUG] AdminPanel: Response status:', response.status);
-      console.log('[DEBUG] AdminPanel: Response headers:', response.headers);
-      // #endregion
       if (response.data.authenticated) {
-        // #region agent log
-        console.log('[DEBUG] AdminPanel: Authenticated, setting state');
-        // #endregion
         setIsAuthenticated(true);
         fetchPlayers();
       } else {
-        // #region agent log
-        console.log('[DEBUG] AdminPanel: Not authenticated, redirecting to login');
-        // #endregion
         navigate('/admin/login');
       }
     } catch (err) {
-      // #region agent log
-      console.error('[DEBUG] AdminPanel: Auth check error', {
-        message: err.message,
-        response: err.response,
-        status: err.response?.status,
-        code: err.code
-      });
-      // #endregion
       navigate('/admin/login');
     }
   }, [navigate, fetchPlayers]);
 
   useEffect(() => {
-    // #region agent log
-    console.log('[DEBUG] AdminPanel: Component mounted, calling checkAuth');
-    // #endregion
     checkAuth();
   }, [checkAuth]);
 
@@ -99,10 +73,17 @@ const AdminPanel = () => {
   const handleUpdatePlayer = async (e) => {
     e.preventDefault();
     try {
-      const response = await apiClient.patch(`/players/${editingPlayer._id}`, formData);
+      // 将空字符串转换为0
+      const dataToSend = {
+        name: formData.name,
+        extractionValue: formData.extractionValue === '' ? 0 : parseFloat(formData.extractionValue) || 0,
+        redValue: formData.redValue === '' ? 0 : parseFloat(formData.redValue) || 0,
+        kills: formData.kills === '' ? 0 : parseFloat(formData.kills) || 0,
+      };
+      const response = await apiClient.patch(`/players/${editingPlayer._id}`, dataToSend);
       if (response.data.success) {
         setEditingPlayer(null);
-        setFormData({ name: '', extractionValue: 0, redValue: 0, kills: 0 });
+        setFormData({ name: '', extractionValue: '', redValue: '', kills: '' });
         fetchPlayers();
       }
     } catch (err) {
@@ -129,9 +110,9 @@ const AdminPanel = () => {
     setEditingPlayer(player);
     setFormData({
       name: player.name,
-      extractionValue: player.extractionValue,
-      redValue: player.redValue,
-      kills: player.kills,
+      extractionValue: player.extractionValue || '',
+      redValue: player.redValue || '',
+      kills: player.kills || '',
     });
     setShowAddForm(false);
   };
@@ -144,9 +125,6 @@ const AdminPanel = () => {
     } finally {
       // 清除 token
       localStorage.removeItem('authToken');
-      // #region agent log
-      console.log('[DEBUG] AdminPanel: Token cleared, redirecting to login');
-      // #endregion
       navigate('/admin/login');
     }
   };
@@ -168,7 +146,7 @@ const AdminPanel = () => {
       <header className="admin-header">
         <h1>主办方管理面板</h1>
         <div className="admin-actions">
-          <button onClick={() => { setShowAddForm(true); setEditingPlayer(null); setFormData({ name: '', extractionValue: 0, redValue: 0, kills: 0 }); }} className="btn btn-primary">
+          <button onClick={() => { setShowAddForm(true); setEditingPlayer(null); setFormData({ name: '', extractionValue: '', redValue: '', kills: '' }); }} className="btn btn-primary">
             添加选手
           </button>
           <button onClick={handleLogout} className="btn btn-secondary">
@@ -199,7 +177,7 @@ const AdminPanel = () => {
                   <input
                     type="number"
                     value={formData.extractionValue}
-                    onChange={(e) => setFormData({ ...formData, extractionValue: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, extractionValue: e.target.value })}
                     min="0"
                   />
                 </div>
@@ -210,7 +188,7 @@ const AdminPanel = () => {
                   <input
                     type="number"
                     value={formData.redValue}
-                    onChange={(e) => setFormData({ ...formData, redValue: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, redValue: e.target.value })}
                     min="0"
                   />
                 </div>
@@ -219,13 +197,17 @@ const AdminPanel = () => {
                   <input
                     type="number"
                     value={formData.kills}
-                    onChange={(e) => setFormData({ ...formData, kills: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, kills: e.target.value })}
                     min="0"
                   />
                 </div>
               </div>
               <div className="form-preview">
-                <strong>预估总分：</strong> {formatNumber(calculateScore(formData.extractionValue, formData.redValue, formData.kills))}
+                <strong>预估总分：</strong> {formatNumber(calculateScore(
+                  formData.extractionValue === '' ? 0 : parseFloat(formData.extractionValue) || 0,
+                  formData.redValue === '' ? 0 : parseFloat(formData.redValue) || 0,
+                  formData.kills === '' ? 0 : parseFloat(formData.kills) || 0
+                ))}
                 <span className="formula">（撤离价值 - 大红价值 + 人头数 × 250,000）</span>
               </div>
               <div className="form-actions">
@@ -237,7 +219,7 @@ const AdminPanel = () => {
                   onClick={() => {
                     setShowAddForm(false);
                     setEditingPlayer(null);
-                    setFormData({ name: '', extractionValue: 0, redValue: 0, kills: 0 });
+                    setFormData({ name: '', extractionValue: '', redValue: '', kills: '' });
                   }}
                   className="btn btn-cancel"
                 >
