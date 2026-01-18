@@ -42,13 +42,18 @@ const AdminPanel = () => {
     try {
       // #region agent log
       console.log('[DEBUG] AdminPanel: Checking auth, cookies:', document.cookie);
+      console.log('[DEBUG] AdminPanel: About to send /auth/check request');
       // #endregion
       const response = await apiClient.get('/auth/check');
       // #region agent log
-      console.log('[DEBUG] AdminPanel: Auth check response', response.data);
+      console.log('[DEBUG] AdminPanel: Auth check response received', response.data);
+      console.log('[DEBUG] AdminPanel: Response status:', response.status);
       console.log('[DEBUG] AdminPanel: Response headers:', response.headers);
       // #endregion
       if (response.data.authenticated) {
+        // #region agent log
+        console.log('[DEBUG] AdminPanel: Authenticated, setting state');
+        // #endregion
         setIsAuthenticated(true);
         fetchPlayers();
       } else {
@@ -59,13 +64,21 @@ const AdminPanel = () => {
       }
     } catch (err) {
       // #region agent log
-      console.error('[DEBUG] AdminPanel: Auth check error', err);
+      console.error('[DEBUG] AdminPanel: Auth check error', {
+        message: err.message,
+        response: err.response,
+        status: err.response?.status,
+        code: err.code
+      });
       // #endregion
       navigate('/admin/login');
     }
   }, [navigate, fetchPlayers]);
 
   useEffect(() => {
+    // #region agent log
+    console.log('[DEBUG] AdminPanel: Component mounted, calling checkAuth');
+    // #endregion
     checkAuth();
   }, [checkAuth]);
 

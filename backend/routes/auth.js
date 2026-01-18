@@ -37,12 +37,32 @@ router.post('/login', (req, res) => {
       }
     });
     // 手动设置响应头以确保 Cookie 被正确设置
-    res.cookie('sessionId', req.sessionID, {
+    // 注意：express-session 已经设置了 Cookie，这里只是确保配置正确
+    // 手动设置 Cookie 以确保跨域工作
+    // #region agent log
+    console.log('[DEBUG] Auth: Setting cookie manually with session ID:', req.sessionID);
+    console.log('[DEBUG] Auth: Request origin:', req.headers.origin);
+    // #endregion
+    
+    // 设置响应头以确保 Cookie 被正确设置
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    
+    // 使用 express-session 的默认方式，但确保选项正确
+    // express-session 会自动设置 Cookie，但我们也可以手动设置以确保正确
+    const cookieOptions = {
       secure: true,
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
       sameSite: 'none',
-    });
+      path: '/',
+      // 不设置 domain，让浏览器自动处理
+    };
+    
+    // #region agent log
+    console.log('[DEBUG] Auth: Cookie options:', cookieOptions);
+    // #endregion
+    
+    res.cookie('sessionId', req.sessionID, cookieOptions);
     res.json({ 
       success: true, 
       message: '登录成功',
