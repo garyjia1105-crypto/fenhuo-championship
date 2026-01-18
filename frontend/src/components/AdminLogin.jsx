@@ -11,14 +11,34 @@ const AdminLogin = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // #region agent log
+    console.log('[DEBUG] AdminLogin: Component mounted, checking auth');
+    // #endregion
     // 检查是否已登录
     apiClient.get('/auth/check')
       .then(response => {
+        // #region agent log
+        console.log('[DEBUG] AdminLogin: Auth check response', response.data);
+        // #endregion
         if (response.data.authenticated) {
+          // #region agent log
+          console.log('[DEBUG] AdminLogin: Already authenticated, navigating to /admin');
+          // #endregion
           navigate('/admin');
+        } else {
+          // #region agent log
+          console.log('[DEBUG] AdminLogin: Not authenticated, showing login form');
+          // #endregion
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        // #region agent log
+        console.error('[DEBUG] AdminLogin: Auth check failed', {
+          message: err.message,
+          response: err.response,
+          code: err.code
+        });
+        // #endregion
         // 未登录，继续显示登录页面
       });
   }, [navigate]);
