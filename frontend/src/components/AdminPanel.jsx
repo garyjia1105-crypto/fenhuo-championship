@@ -139,9 +139,14 @@ const AdminPanel = () => {
   const handleLogout = async () => {
     try {
       await apiClient.post('/auth/logout');
-      navigate('/admin/login');
     } catch (err) {
       console.error('Logout error:', err);
+    } finally {
+      // 清除 token
+      localStorage.removeItem('authToken');
+      // #region agent log
+      console.log('[DEBUG] AdminPanel: Token cleared, redirecting to login');
+      // #endregion
       navigate('/admin/login');
     }
   };

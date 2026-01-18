@@ -1,72 +1,46 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
+const { setTokenStore } = require('../middleware/auth');
 
 // 主办方凭据
 const ADMIN_USERNAME = 'QingXiang';
 const ADMIN_PASSWORD = 'deltaforce123';
+
+// 简单的 token 存储（生产环境应该使用 Redis 或数据库）
+const tokenStore = new Map(); // token -> { username, expiresAt }
+
+// 设置 middleware 中的 tokenStore
+setTokenStore(tokenStore);
 
 // 登录
 router.post('/login', (req, res) => {
   const { username, password } = req.body;
 
   if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-    req.session.isAuthenticated = true;
-    req.session.username = username;
+    // 生成 token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24小时后过期
+    
+    // 存储 token
+    tokenStore.set(token, { username, expiresAt });
+    
     // #region agent log
-    console.log('[DEBUG] Auth: Login successful, session ID:', req.sessionID);
-    console.log('[DEBUG] Auth: Session data:', req.session);
-    console.log('[DEBUG] Auth: Request origin:', req.headers.origin);
-    console.log('[DEBUG] Auth: Request headers:', req.headers);
+    console.log('[DEBUG] Auth: Login successful, token generated:', token.substring(0, 10) + '...');
     // #endregion
-    // 确保保存 session
-    req.session.save((err) => {
-      if (err) {
-        // #region agent log
-        console.error('[DEBUG] Auth: Session save error:', err);
-        // #endregion
-      } else {
-        // #region agent log
-        console.log('[DEBUG] Auth: Session saved successfully');
-        console.log('[DEBUG] Auth: Cookie will be set with options:', {
-          secure: req.session.cookie.secure,
-          sameSite: req.session.cookie.sameSite,
-          httpOnly: req.session.cookie.httpOnly,
-          maxAge: req.session.cookie.maxAge
-        });
-        // #endregion
+    
+    // 清理过期的 token（简单清理，生产环境应该使用定时任务）
+    for (const [t, data] of tokenStore.entries()) {
+      if (data.expiresAt < Date.now()) {
+        tokenStore.delete(t);
       }
-    });
-    // 手动设置响应头以确保 Cookie 被正确设置
-    // 注意：express-session 已经设置了 Cookie，这里只是确保配置正确
-    // 手动设置 Cookie 以确保跨域工作
-    // #region agent log
-    console.log('[DEBUG] Auth: Setting cookie manually with session ID:', req.sessionID);
-    console.log('[DEBUG] Auth: Request origin:', req.headers.origin);
-    // #endregion
+    }
     
-    // 设置响应头以确保 Cookie 被正确设置
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    
-    // 使用 express-session 的默认方式，但确保选项正确
-    // express-session 会自动设置 Cookie，但我们也可以手动设置以确保正确
-    const cookieOptions = {
-      secure: true,
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
-      sameSite: 'none',
-      path: '/',
-      // 不设置 domain，让浏览器自动处理
-    };
-    
-    // #region agent log
-    console.log('[DEBUG] Auth: Cookie options:', cookieOptions);
-    // #endregion
-    
-    res.cookie('sessionId', req.sessionID, cookieOptions);
     res.json({ 
       success: true, 
       message: '登录成功',
-      username: username 
+      username: username,
+      token: token // 返回 token 给前端
     });
   } else {
     res.status(401).json({ 
@@ -78,35 +52,53 @@ router.post('/login', (req, res) => {
 
 // 登出
 router.post('/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ 
-        success: false, 
-        message: '登出失败' 
-      });
-    }
-    res.json({ 
-      success: true, 
-      message: '登出成功' 
-    });
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.replace('Bearer ', '') : req.body.token;
+  
+  if (token) {
+    tokenStore.delete(token);
+    // #region agent log
+    console.log('[DEBUG] Auth: Token deleted, logout successful');
+    // #endregion
+  }
+  
+  res.json({ 
+    success: true, 
+    message: '登出成功' 
   });
 });
 
 // 检查登录状态
 router.get('/check', (req, res) => {
+  // 从 Authorization header 或 query 参数获取 token
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.replace('Bearer ', '') : req.query.token;
+  
   // #region agent log
-  console.log('[DEBUG] Auth: Check request, session ID:', req.sessionID);
-  console.log('[DEBUG] Auth: Session data:', req.session);
-  console.log('[DEBUG] Auth: Cookies:', req.headers.cookie);
+  console.log('[DEBUG] Auth: Check request, token:', token ? token.substring(0, 10) + '...' : 'none');
   // #endregion
-  if (req.session && req.session.isAuthenticated) {
-    res.json({ 
-      authenticated: true, 
-      username: req.session.username 
-    });
-  } else {
-    res.json({ authenticated: false });
+  
+  if (token) {
+    const tokenData = tokenStore.get(token);
+    if (tokenData && tokenData.expiresAt > Date.now()) {
+      // #region agent log
+      console.log('[DEBUG] Auth: Token valid, authenticated');
+      // #endregion
+      res.json({ 
+        authenticated: true, 
+        username: tokenData.username 
+      });
+      return;
+    } else if (tokenData && tokenData.expiresAt <= Date.now()) {
+      // Token 过期，删除
+      tokenStore.delete(token);
+    }
   }
+  
+  // #region agent log
+  console.log('[DEBUG] Auth: Token invalid or missing, not authenticated');
+  // #endregion
+  res.json({ authenticated: false });
 });
 
 module.exports = router;

@@ -4,18 +4,22 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const apiClient = axios.create({
   baseURL: API_URL,
-  withCredentials: true,
+  withCredentials: false, // 不再需要 Cookie
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// 请求拦截器
+// 请求拦截器：从 localStorage 获取 token 并添加到请求头
 apiClient.interceptors.request.use(
   (config) => {
+    const token = localStorage.getItem('authToken');
     // #region agent log
-    console.log('[DEBUG] API Request:', config.method?.toUpperCase(), config.url, 'With credentials:', config.withCredentials);
+    console.log('[DEBUG] API Request:', config.method?.toUpperCase(), config.url, 'Token:', token ? token.substring(0, 10) + '...' : 'none');
     // #endregion
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -44,6 +48,7 @@ apiClient.interceptors.response.use(
     // #endregion
     if (error.response?.status === 401) {
       // 未授权，清除登录状态
+      localStorage.removeItem('authToken');
       window.location.href = '#/admin/login';
     }
     return Promise.reject(error);

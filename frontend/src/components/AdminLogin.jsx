@@ -66,18 +66,13 @@ const AdminLogin = () => {
       console.log('[DEBUG] AdminLogin: Set-Cookie header:', response.headers['set-cookie']);
       // #endregion
 
-      if (response.data.success) {
+      if (response.data.success && response.data.token) {
+        // 保存 token 到 localStorage
+        localStorage.setItem('authToken', response.data.token);
         // #region agent log
-        console.log('[DEBUG] AdminLogin: Login successful, checking cookies');
-        console.log('[DEBUG] AdminLogin: Document cookies before delay:', document.cookie);
+        console.log('[DEBUG] AdminLogin: Login successful, token saved to localStorage');
         // #endregion
-        // 等待一小段时间确保 cookie 被设置
-        setTimeout(() => {
-          // #region agent log
-          console.log('[DEBUG] AdminLogin: Navigating to /admin, cookies after delay:', document.cookie);
-          // #endregion
-          navigate('/admin');
-        }, 200);
+        navigate('/admin');
       } else {
         // #region agent log
         console.log('[DEBUG] AdminLogin: Login failed, response.data.success is false');
