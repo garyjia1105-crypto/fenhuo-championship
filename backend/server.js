@@ -10,35 +10,22 @@ const app = express();
 connectDB();
 
 // 中间件
-// #region agent log - CORS debugging
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-console.log('[DEBUG] CORS origin configured:', frontendUrl);
-// #endregion
 
 app.use(cors({
   origin: function (origin, callback) {
-    // #region agent log
-    console.log('[DEBUG] CORS request from origin:', origin);
-    // #endregion
-    // 允许所有来源（生产环境应该限制）
+    // 允许的来源列表
     const allowedOrigins = [
       frontendUrl,
       'http://localhost:3000',
       'https://fenhuo-championship-frontend.onrender.com',
-      'https://*.onrender.com'
     ];
     
     // 如果没有 origin（例如 Postman 或服务器请求），允许
     if (!origin) return callback(null, true);
     
     // 检查是否匹配允许的来源
-    const isAllowed = allowedOrigins.some(allowed => {
-      if (allowed.includes('*')) {
-        const pattern = allowed.replace('*', '.*');
-        return new RegExp(pattern).test(origin);
-      }
-      return origin === allowed;
-    });
+    const isAllowed = allowedOrigins.includes(origin);
     
     if (isAllowed || process.env.NODE_ENV !== 'production') {
       callback(null, true);
