@@ -12,6 +12,10 @@ router.post('/login', (req, res) => {
   if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
     req.session.isAuthenticated = true;
     req.session.username = username;
+    // #region agent log
+    console.log('[DEBUG] Auth: Login successful, session ID:', req.sessionID);
+    console.log('[DEBUG] Auth: Session data:', req.session);
+    // #endregion
     res.json({ 
       success: true, 
       message: '登录成功',
@@ -43,6 +47,11 @@ router.post('/logout', (req, res) => {
 
 // 检查登录状态
 router.get('/check', (req, res) => {
+  // #region agent log
+  console.log('[DEBUG] Auth: Check request, session ID:', req.sessionID);
+  console.log('[DEBUG] Auth: Session data:', req.session);
+  console.log('[DEBUG] Auth: Cookies:', req.headers.cookie);
+  // #endregion
   if (req.session && req.session.isAuthenticated) {
     res.json({ 
       authenticated: true, 

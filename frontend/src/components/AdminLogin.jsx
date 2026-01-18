@@ -66,9 +66,15 @@ const AdminLogin = () => {
 
       if (response.data.success) {
         // #region agent log
-        console.log('[DEBUG] AdminLogin: Login successful, navigating to /admin');
+        console.log('[DEBUG] AdminLogin: Login successful, waiting before navigation');
         // #endregion
-        navigate('/admin');
+        // 等待一小段时间确保 cookie 被设置
+        setTimeout(() => {
+          // #region agent log
+          console.log('[DEBUG] AdminLogin: Navigating to /admin');
+          // #endregion
+          navigate('/admin');
+        }, 100);
       } else {
         // #region agent log
         console.log('[DEBUG] AdminLogin: Login failed, response.data.success is false');
