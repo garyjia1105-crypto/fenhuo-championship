@@ -22,9 +22,8 @@ services:
     healthCheckPath: /api/health
 
   # 前端静态站点
-  - type: web
+  - type: static
     name: fenguo-championship-frontend
-    env: static
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/build
     envVars:

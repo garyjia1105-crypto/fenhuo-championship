@@ -13,12 +13,26 @@ const Leaderboard = () => {
   const fetchPlayers = async () => {
     try {
       setLoading(true);
+      // #region agent log
+      console.log('[DEBUG] Leaderboard: Starting to fetch players');
+      // #endregion
       const response = await apiClient.get('/players');
+      // #region agent log
+      console.log('[DEBUG] Leaderboard: Fetch successful', response.data);
+      // #endregion
       if (response.data.success) {
         setPlayers(response.data.players);
         setError(null);
       }
     } catch (err) {
+      // #region agent log
+      console.error('[DEBUG] Leaderboard: Fetch failed', {
+        message: err.message,
+        response: err.response,
+        code: err.code,
+        config: err.config
+      });
+      // #endregion
       setError('加载排行榜失败，请稍后重试');
       console.error('Error fetching players:', err);
     } finally {
