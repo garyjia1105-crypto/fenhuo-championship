@@ -62,19 +62,22 @@ const AdminLogin = () => {
 
       // #region agent log
       console.log('[DEBUG] AdminLogin: Login response', response.data);
+      console.log('[DEBUG] AdminLogin: Response headers:', response.headers);
+      console.log('[DEBUG] AdminLogin: Set-Cookie header:', response.headers['set-cookie']);
       // #endregion
 
       if (response.data.success) {
         // #region agent log
-        console.log('[DEBUG] AdminLogin: Login successful, waiting before navigation');
+        console.log('[DEBUG] AdminLogin: Login successful, checking cookies');
+        console.log('[DEBUG] AdminLogin: Document cookies before delay:', document.cookie);
         // #endregion
         // 等待一小段时间确保 cookie 被设置
         setTimeout(() => {
           // #region agent log
-          console.log('[DEBUG] AdminLogin: Navigating to /admin');
+          console.log('[DEBUG] AdminLogin: Navigating to /admin, cookies after delay:', document.cookie);
           // #endregion
           navigate('/admin');
-        }, 100);
+        }, 200);
       } else {
         // #region agent log
         console.log('[DEBUG] AdminLogin: Login failed, response.data.success is false');

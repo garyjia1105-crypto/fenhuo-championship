@@ -13,9 +13,15 @@ const apiClient = axios.create({
 // 请求拦截器
 apiClient.interceptors.request.use(
   (config) => {
+    // #region agent log
+    console.log('[DEBUG] API Request:', config.method?.toUpperCase(), config.url, 'With credentials:', config.withCredentials);
+    // #endregion
     return config;
   },
   (error) => {
+    // #region agent log
+    console.error('[DEBUG] API Request error:', error);
+    // #endregion
     return Promise.reject(error);
   }
 );
@@ -23,12 +29,22 @@ apiClient.interceptors.request.use(
 // 响应拦截器
 apiClient.interceptors.response.use(
   (response) => {
+    // #region agent log
+    console.log('[DEBUG] API Response:', response.status, response.config.url, 'Headers:', response.headers);
+    // #endregion
     return response;
   },
   (error) => {
+    // #region agent log
+    console.error('[DEBUG] API Error:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      message: error.message
+    });
+    // #endregion
     if (error.response?.status === 401) {
       // 未授权，清除登录状态
-      window.location.href = '/admin/login';
+      window.location.href = '#/admin/login';
     }
     return Promise.reject(error);
   }

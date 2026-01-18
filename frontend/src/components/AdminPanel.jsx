@@ -40,14 +40,27 @@ const AdminPanel = () => {
 
   const checkAuth = useCallback(async () => {
     try {
+      // #region agent log
+      console.log('[DEBUG] AdminPanel: Checking auth, cookies:', document.cookie);
+      // #endregion
       const response = await apiClient.get('/auth/check');
+      // #region agent log
+      console.log('[DEBUG] AdminPanel: Auth check response', response.data);
+      console.log('[DEBUG] AdminPanel: Response headers:', response.headers);
+      // #endregion
       if (response.data.authenticated) {
         setIsAuthenticated(true);
         fetchPlayers();
       } else {
+        // #region agent log
+        console.log('[DEBUG] AdminPanel: Not authenticated, redirecting to login');
+        // #endregion
         navigate('/admin/login');
       }
     } catch (err) {
+      // #region agent log
+      console.error('[DEBUG] AdminPanel: Auth check error', err);
+      // #endregion
       navigate('/admin/login');
     }
   }, [navigate, fetchPlayers]);
