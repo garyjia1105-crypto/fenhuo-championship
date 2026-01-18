@@ -14,6 +14,9 @@ const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 app.use(cors({
   origin: function (origin, callback) {
+    // #region agent log
+    console.log('[DEBUG] CORS: Request from origin:', origin);
+    // #endregion
     // 允许的来源列表
     const allowedOrigins = [
       frontendUrl,
@@ -22,10 +25,19 @@ app.use(cors({
     ];
     
     // 如果没有 origin（例如 Postman 或服务器请求），允许
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      // #region agent log
+      console.log('[DEBUG] CORS: No origin, allowing');
+      // #endregion
+      return callback(null, true);
+    }
     
     // 检查是否匹配允许的来源
     const isAllowed = allowedOrigins.includes(origin);
+    
+    // #region agent log
+    console.log('[DEBUG] CORS: Is allowed:', isAllowed, 'Frontend URL:', frontendUrl);
+    // #endregion
     
     if (isAllowed || process.env.NODE_ENV !== 'production') {
       callback(null, true);
@@ -34,6 +46,7 @@ app.use(cors({
     }
   },
   credentials: true,
+  exposedHeaders: ['Set-Cookie'],
 }));
 
 app.use(express.json());
@@ -44,11 +57,13 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'fenguo-championship-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
+  name: 'sessionId', // 设置 cookie 名称
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // 生产环境需要 HTTPS
+    secure: true, // 生产环境必须为 true（HTTPS）
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24小时
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 跨域需要 'none'
+    sameSite: 'none', // 跨域必须为 'none'
+    domain: undefined, // 不设置 domain，让浏览器自动处理
   },
 }));
 

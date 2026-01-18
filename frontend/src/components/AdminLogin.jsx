@@ -144,7 +144,7 @@ const AdminLogin = () => {
             {loading ? '登录中...' : '登录'}
           </button>
         </form>
-        <a href="/" className="back-link">返回排行榜</a>
+        <a href="#/" className="back-link">返回排行榜</a>
       </div>
     </div>
   );

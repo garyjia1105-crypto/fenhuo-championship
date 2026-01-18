@@ -117,7 +117,7 @@ const Leaderboard = () => {
       </main>
 
       <footer className="leaderboard-footer">
-        <a href="/admin/login" className="admin-link">主办方登录</a>
+        <a href="#/admin/login" className="admin-link">主办方登录</a>
       </footer>
     </div>
   );
