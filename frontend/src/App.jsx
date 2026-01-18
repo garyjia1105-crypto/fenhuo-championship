@@ -1,40 +1,65 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Leaderboard from './components/Leaderboard';
 import AdminLogin from './components/AdminLogin';
 import AdminPanel from './components/AdminPanel';
 
-// Fix for /index.html redirect issue - sync React Router with actual browser URL
+// Fix for /index.html redirect issue - try to recover original path from hash or referrer
 const RouteSync = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const hasFixedRef = useRef(false);
   
   useEffect(() => {
     // #region agent log
-    console.log('[DEBUG] Route changed to:', location.pathname, 'Browser URL:', window.location.pathname);
+    console.log('[DEBUG] Route changed to:', location.pathname, 'Browser URL:', window.location.pathname, 'Hash:', window.location.hash);
     // #endregion
     
-    // If React Router thinks we're at /index.html but browser URL is different, fix it
-    if (location.pathname === '/index.html') {
-      const browserPath = window.location.pathname;
-      // #region agent log
-      console.log('[DEBUG] Detected /index.html in React Router, browser is at:', browserPath);
-      // #endregion
-      if (browserPath !== '/index.html' && browserPath !== '/') {
-        navigate(browserPath, { replace: true });
-      } else {
-        navigate('/', { replace: true });
+    // If we're at /index.html, try to recover the original path
+    if (location.pathname === '/index.html' && !hasFixedRef.current) {
+      hasFixedRef.current = true;
+      
+      // Try to get original path from hash (some servers use this)
+      const hashPath = window.location.hash.replace('#', '');
+      if (hashPath && hashPath !== '/') {
+        // #region agent log
+        console.log('[DEBUG] Found path in hash:', hashPath);
+        // #endregion
+        navigate(hashPath, { replace: true });
+        return;
       }
+      
+      // Try to get from document.referrer (if user came from another page)
+      const referrer = document.referrer;
+      if (referrer) {
+        try {
+          const referrerUrl = new URL(referrer);
+          const referrerPath = referrerUrl.pathname;
+          // #region agent log
+          console.log('[DEBUG] Referrer path:', referrerPath);
+          // #endregion
+          if (referrerPath && referrerPath !== '/' && referrerPath !== '/index.html') {
+            navigate(referrerPath, { replace: true });
+            return;
+          }
+        } catch (e) {
+          // Invalid referrer URL
+        }
+      }
+      
+      // If user directly accessed /admin/login but got redirected to /index.html
+      // Check if there's a way to detect the original request
+      // For now, redirect to / since we can't recover the path
+      // #region agent log
+      console.log('[DEBUG] Cannot recover original path, redirecting to /');
+      // #endregion
+      navigate('/', { replace: true });
       return;
     }
     
-    // If browser URL doesn't match React Router path, sync them
-    const browserPath = window.location.pathname;
-    if (browserPath !== location.pathname && browserPath !== '/index.html') {
-      // #region agent log
-      console.log('[DEBUG] Syncing React Router to browser URL:', browserPath);
-      // #endregion
-      navigate(browserPath, { replace: true });
+    // Reset fix flag if we're not at /index.html anymore
+    if (location.pathname !== '/index.html') {
+      hasFixedRef.current = false;
     }
   }, [location, navigate]);
   
