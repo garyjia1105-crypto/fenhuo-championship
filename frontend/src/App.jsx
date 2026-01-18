@@ -12,7 +12,7 @@ const RouteSync = () => {
   
   useEffect(() => {
     // #region agent log
-    console.log('[DEBUG] Route changed to:', location.pathname, 'Browser URL:', window.location.pathname, 'Hash:', window.location.hash);
+    console.log('[DEBUG] Route changed to:', location.pathname, 'Browser URL:', window.location.pathname, 'Hash:', window.location.hash, 'Full URL:', window.location.href);
     // #endregion
     
     // If we're at /index.html, try to recover the original path
